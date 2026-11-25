@@ -101,7 +101,9 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 contexto,
                 receptor,
                 IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED),
-                ContextCompat.RECEIVER_NOT_EXPORTED
+                // En mi celular con NOT_EXPORTED no llegaba el anuncio del modo avion.
+                // Uso EXPORTED porque este anuncio es protegido: solo el sistema lo puede enviar.
+                ContextCompat.RECEIVER_EXPORTED
             )
             onDispose { contexto.unregisterReceiver(receptor) }
         } else {
