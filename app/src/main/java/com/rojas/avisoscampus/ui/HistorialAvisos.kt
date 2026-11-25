@@ -29,6 +29,7 @@ import com.rojas.avisoscampus.ui.theme.GrisTexto
 import com.rojas.avisoscampus.ui.theme.OrigenBoton
 import com.rojas.avisoscampus.ui.theme.OrigenModoAvion
 import com.rojas.avisoscampus.ui.theme.OrigenRecordatorio
+import com.rojas.avisoscampus.ui.theme.OrigenCargador
 
 // Tarjeta con la lista de avisos. No conoce al ViewModel, solo recibe la lista.
 @Composable
@@ -92,6 +93,7 @@ fun EtiquetaOrigen(origen: Origen) {
         Origen.BOTON -> OrigenBoton
         Origen.RECORDATORIO -> OrigenRecordatorio
         Origen.MODO_AVION -> OrigenModoAvion
+        Origen.CARGADOR -> OrigenCargador
     }
     // la etiqueta amarilla se lee mejor con letra oscura
     val letra = if (origen == Origen.RECORDATORIO) Color(0xFF3A2A00) else Color.White

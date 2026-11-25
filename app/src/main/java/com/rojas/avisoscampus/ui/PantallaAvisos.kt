@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.rojas.avisoscampus.model.PermisoUi
 import com.rojas.avisoscampus.notificacion.Notificador
+import com.rojas.avisoscampus.receiver.CargadorReceiver
 import com.rojas.avisoscampus.receiver.ModoAvionReceiver
 import com.rojas.avisoscampus.ui.theme.BordeTarjeta
 import com.rojas.avisoscampus.ui.theme.GrisEtiqueta
@@ -67,6 +68,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     val permiso by vm.permiso.collectAsState()
     val faltan by vm.faltan.collectAsState()
     val escuchando by vm.escuchandoAvion.collectAsState()
+    val escuchandoCargador by vm.escuchandoCargador.collectAsState()
     val avisos by vm.avisos.collectAsState()
     val mensaje by vm.mensaje.collectAsState()
 
@@ -101,11 +103,28 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 contexto,
                 receptor,
                 IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED),
-                // En mi celular con NOT_EXPORTED no llegaba el anuncio del modo avion.
-                // Uso EXPORTED porque este anuncio es protegido: solo el sistema lo puede enviar.
-                ContextCompat.RECEIVER_EXPORTED
+                ContextCompat.RECEIVER_NOT_EXPORTED
             )
             onDispose { contexto.unregisterReceiver(receptor) }
+        } else {
+            onDispose { }
+        }
+    }
+
+    // Mejora: receptor del cargador, con su propio switch
+    DisposableEffect(escuchandoCargador) {
+        if (escuchandoCargador) {
+            val receptorCargador = CargadorReceiver { conectado -> vm.alCambiarCargador(conectado) }
+            val filtro = IntentFilter()
+            filtro.addAction(Intent.ACTION_POWER_CONNECTED)
+            filtro.addAction(Intent.ACTION_POWER_DISCONNECTED)
+            ContextCompat.registerReceiver(
+                contexto,
+                receptorCargador,
+                filtro,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            onDispose { contexto.unregisterReceiver(receptorCargador) }
         } else {
             onDispose { }
         }
@@ -235,6 +254,17 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 )
                 Text(
                     text = "Activa o desactiva el modo avión del celular",
+                    color = GrisTexto,
+                    fontSize = 12.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
+                FilaSwitch(
+                    texto = "Escuchar el cargador",
+                    activo = escuchandoCargador,
+                    alCambiar = { vm.cambiarEscuchaCargador(it) }
+                )
+                Text(
+                    text = "Conecta o desconecta el cargador del celular",
                     color = GrisTexto,
                     fontSize = 12.sp,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
