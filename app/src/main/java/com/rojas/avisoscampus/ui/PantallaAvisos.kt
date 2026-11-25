@@ -1,6 +1,8 @@
 package com.rojas.avisoscampus.ui
 
 import android.Manifest
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,10 +27,13 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -39,8 +44,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.rojas.avisoscampus.model.PermisoUi
 import com.rojas.avisoscampus.notificacion.Notificador
+import com.rojas.avisoscampus.receiver.ModoAvionReceiver
 import com.rojas.avisoscampus.ui.theme.BordeTarjeta
 import com.rojas.avisoscampus.ui.theme.GrisEtiqueta
 import com.rojas.avisoscampus.ui.theme.GrisTexto
@@ -56,6 +63,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     val contexto = LocalContext.current
     val permiso by vm.permiso.collectAsState()
     val faltan by vm.faltan.collectAsState()
+    val escuchando by vm.escuchandoAvion.collectAsState()
 
     // Paso 2: pedir el permiso de notificaciones
     val lanzador = rememberLauncherForActivityResult(
@@ -75,6 +83,22 @@ fun PantallaAvisos(vm: AvisosViewModel) {
         vm.eventos.collect { aviso ->
             val mostrado = Notificador.mostrar(contexto, aviso)
             // TODO Paso 8: si no se mostró, avisar al ViewModel
+        }
+    }
+
+    // Paso 6: registrar el receptor solo mientras el switch esta activo
+    DisposableEffect(escuchando) {
+        if (escuchando) {
+            val receptor = ModoAvionReceiver { activo -> vm.alCambiarModoAvion(activo) }
+            ContextCompat.registerReceiver(
+                contexto,
+                receptor,
+                IntentFilter(Intent.ACTION_AIRPLANE_MODE_CHANGED),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+            onDispose { contexto.unregisterReceiver(receptor) }
+        } else {
+            onDispose { }
         }
     }
 
@@ -166,7 +190,17 @@ fun PantallaAvisos(vm: AvisosViewModel) {
             }
 
             Tarjeta(titulo = "Receptor de anuncios") {
-                // TODO Paso 6: Switch Escuchar el modo avión
+                FilaSwitch(
+                    texto = "Escuchar el modo avión",
+                    activo = escuchando,
+                    alCambiar = { vm.cambiarEscucha(it) }
+                )
+                Text(
+                    text = "Activa o desactiva el modo avión del celular",
+                    color = GrisTexto,
+                    fontSize = 12.sp,
+                    modifier = Modifier.align(Alignment.CenterHorizontally)
+                )
             }
 
             Tarjeta(titulo = "Historial") {
@@ -231,4 +265,21 @@ fun EtiquetaPermiso(permiso: PermisoUi) {
             .background(fondo, RoundedCornerShape(50))
             .padding(horizontal = 10.dp, vertical = 2.dp)
     )
+}
+
+@Composable
+fun FilaSwitch(texto: String, activo: Boolean, alCambiar: (Boolean) -> Unit) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text = texto, fontSize = 14.sp, modifier = Modifier.weight(1f))
+        Switch(
+            checked = activo,
+            onCheckedChange = alCambiar,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MaterialTheme.colorScheme.primary
+            )
+        )
+    }
 }
