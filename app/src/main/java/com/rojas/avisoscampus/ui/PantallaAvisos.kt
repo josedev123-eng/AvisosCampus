@@ -64,6 +64,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
     val permiso by vm.permiso.collectAsState()
     val faltan by vm.faltan.collectAsState()
     val escuchando by vm.escuchandoAvion.collectAsState()
+    val avisos by vm.avisos.collectAsState()
 
     // Paso 2: pedir el permiso de notificaciones
     val lanzador = rememberLauncherForActivityResult(
@@ -203,9 +204,7 @@ fun PantallaAvisos(vm: AvisosViewModel) {
                 )
             }
 
-            Tarjeta(titulo = "Historial") {
-                // TODO Paso 7: lista de avisos
-            }
+            HistorialAvisos(avisos)
 
         }
     }
