@@ -23,6 +23,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -54,6 +55,7 @@ import com.rojas.avisoscampus.viewmodel.AvisosViewModel
 fun PantallaAvisos(vm: AvisosViewModel) {
     val contexto = LocalContext.current
     val permiso by vm.permiso.collectAsState()
+    val faltan by vm.faltan.collectAsState()
 
     // Paso 2: pedir el permiso de notificaciones
     val lanzador = rememberLauncherForActivityResult(
@@ -132,7 +134,35 @@ fun PantallaAvisos(vm: AvisosViewModel) {
             }
 
             Tarjeta(titulo = "Recordatorio") {
-                // TODO Paso 5: Recordar en 10 s, Cancelar y Faltan N s
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp, Alignment.CenterHorizontally)
+                ) {
+                    Button(
+                        onClick = { vm.recordarEn(10) },
+                        enabled = faltan == null
+                    ) {
+                        Text("Recordar en 10 s", fontWeight = FontWeight.Bold)
+                    }
+                    OutlinedButton(
+                        onClick = { vm.cancelarRecordatorio() },
+                        enabled = faltan != null,
+                        border = BorderStroke(
+                            1.5.dp,
+                            if (faltan != null) MaterialTheme.colorScheme.primary else BordeTarjeta
+                        )
+                    ) {
+                        Text("Cancelar", fontWeight = FontWeight.Bold)
+                    }
+                }
+                faltan?.let { s ->
+                    Text(
+                        text = "Faltan $s s",
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 14.sp,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
+                }
             }
 
             Tarjeta(titulo = "Receptor de anuncios") {
